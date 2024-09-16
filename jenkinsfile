@@ -6,6 +6,7 @@ pipeline {
         FTP_USER = 'site7717'
         // Use credentials for FTP password
         FTP_CREDS = credentials('ftp-credentials')
+        WINSCP_PATH = 'C:\\Program Files (x86)\\WinSCP\\WinSCP.com'
     }
     
     stages {
@@ -37,17 +38,16 @@ pipeline {
             steps {
                 script {
                     // Install WinSCP if not already available
-                    bat 'if not exist "C:\\Program Files (x86)\\WinSCP\\WinSCP.com" powershell Invoke-WebRequest "https://downloads.sourceforge.net/project/winscp/WinSCP/5.17.10/WinSCP-5.17.10-Portable.zip" -OutFile winscp.zip && powershell Expand-Archive winscp.zip -DestinationPath C:\\WinSCP'
-                    
-                    // Create WinSCP script
+                    bat "if not exist \"${WINSCP_PATH}\" (echo WinSCP not found at ${WINSCP_PATH} && exit /b 1)"                    
+                   // Create WinSCP script
                     writeFile file: 'ftp_script.txt', text: """
                     open ftp://${FTP_USER}:${FTP_CREDS_PSW}@${FTP_SERVER}
-                    synchronize remote ./publish /wwwroot
+                    synchronize remote .\\publish /wwwroot
                     exit
                     """
                     
                     // Run WinSCP
-                    bat '"C:\\Program Files (x86)\\WinSCP\\WinSCP.com" /script=ftp_script.txt /log=winscp.log'
+                    bat "\"${WINSCP_PATH}\" /script=ftp_script.txt /log=winscp.log"
                 }
             }
         }
