@@ -1,41 +1,44 @@
 pipeline {
     agent any
-    
+
     environment {
-        FTP_SERVER = 'site7717.siteasp.net'
+        FTP_SERVER = 'site7717.siteasp.net:21'  // Including port 21
         FTP_USER = 'site7717'
         FTP_CREDS = credentials('ftp-credentials')
         WINSCP_PATH = '"C:\\Program Files (x86)\\WinSCP\\WinSCP.com"'
     }
-    
+
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
-        
+
         stage('Restore packages') {
             steps {
                 bat 'dotnet restore'
             }
         }
-        
+
         stage('Build') {
             steps {
                 bat 'dotnet build --configuration Release --no-restore'
             }
         }
-        
+
         stage('Publish') {
             steps {
                 bat 'dotnet publish -c Release -o .\\publish'
             }
         }
-        
+
         stage('Deploy') {
             steps {
                 script {
+                    // Extract FTP password securely
+                    def ftpPassword = FTP_CREDS_PSW
+
                     // Check if WinSCP exists
                     bat """
                         if not exist ${WINSCP_PATH} (
@@ -43,21 +46,21 @@ pipeline {
                             exit /b 1
                         )
                     """
-                    
-                    // Create WinSCP script
+
+                    // Create WinSCP script securely
                     writeFile file: 'ftp_script.txt', text: """
-                    open ftp://${FTP_USER}:${FTP_CREDS_PSW}@${FTP_SERVER}
+                    open ftp://${FTP_USER}:${ftpPassword}@${FTP_SERVER}
                     synchronize remote .\\publish /wwwroot
                     exit
                     """
-                    
+
                     // Run WinSCP
                     bat "${WINSCP_PATH} /script=ftp_script.txt /log=winscp.log"
                 }
             }
         }
     }
-    
+
     post {
         always {
             bat 'if exist ftp_script.txt del ftp_script.txt'
