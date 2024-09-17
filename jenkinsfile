@@ -4,9 +4,8 @@ pipeline {
     environment {
         FTP_SERVER = 'site7717.siteasp.net'
         FTP_USER = 'site7717'
-        // Use credentials for FTP password
         FTP_CREDS = credentials('ftp-credentials')
-        WINSCP_PATH = 'C:\\Program Files (x86)\\WinSCP\\WinSCP.com'
+        WINSCP_PATH = '"C:\\Program Files (x86)\\WinSCP\\WinSCP.com"'
     }
     
     stages {
@@ -30,16 +29,22 @@ pipeline {
         
         stage('Publish') {
             steps {
-                bat 'dotnet publish -c Release -o ./publish'
+                bat 'dotnet publish -c Release -o .\\publish'
             }
         }
         
         stage('Deploy') {
             steps {
                 script {
-                    // Install WinSCP if not already available
-                    bat "if not exist \"${WINSCP_PATH}\" (echo WinSCP not found at ${WINSCP_PATH} && exit /b 1)"                    
-                   // Create WinSCP script
+                    // Check if WinSCP exists
+                    bat """
+                        if not exist ${WINSCP_PATH} (
+                            echo WinSCP not found at ${WINSCP_PATH}
+                            exit /b 1
+                        )
+                    """
+                    
+                    // Create WinSCP script
                     writeFile file: 'ftp_script.txt', text: """
                     open ftp://${FTP_USER}:${FTP_CREDS_PSW}@${FTP_SERVER}
                     synchronize remote .\\publish /wwwroot
@@ -47,7 +52,7 @@ pipeline {
                     """
                     
                     // Run WinSCP
-                    bat "\"${WINSCP_PATH}\" /script=ftp_script.txt /log=winscp.log"
+                    bat "${WINSCP_PATH} /script=ftp_script.txt /log=winscp.log"
                 }
             }
         }
@@ -55,11 +60,7 @@ pipeline {
     
     post {
         always {
-            // Clean up sensitive files
-            bat 'del ftp_script.txt'
+            bat 'if exist ftp_script.txt del ftp_script.txt'
         }
     }
 }
-
-
-
