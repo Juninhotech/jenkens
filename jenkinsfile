@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        FTP_SERVER = 'site7717.siteasp.net:21'  // Including port 21
-        FTP_USER = 'site7717'
+        FTP_SERVER = 'site8718.siteasp.net:21'  // Including port 21
+        FTP_USER = 'site8718'
         FTP_CREDS = credentials('ftp-credentials')
         WINSCP_PATH = '"C:\\Program Files (x86)\\WinSCP\\WinSCP.com"'
     }
