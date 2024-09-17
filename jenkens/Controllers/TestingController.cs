@@ -15,5 +15,12 @@ namespace jenkens.Controllers
         {
             return Ok("Just testing");
         }
+
+
+        [HttpGet]
+        public IActionResult Test2()
+        {
+            return Ok("hello");
+        }
     }
 }
